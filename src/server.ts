@@ -11,11 +11,26 @@ const sequelize = new Sequelize({
 	storage: './database.sqlite'
 });
 
-const User = sequelize.define('User', {
-	username: DataTypes.STRING,
-	age: DataTypes.INTEGER
-});
+class User extends Model {
+	declare age: number;
+	public getAge(): number {
+		return this.age;
+	}
+}
 
+User.init({
+	// Model attributes are defined here
+	username: {
+		type: DataTypes.STRING,
+		allowNull: false
+	},
+	age: {
+		type: DataTypes.INTEGER
+	}
+}, {
+	// Other model options go here
+	sequelize, // We need to pass the connection instance
+});
 
 app.get("/api/create", async (req: Request, res: Response) => {
 	let username: string = req.query.username as string || "";
@@ -73,16 +88,41 @@ app.get("/api/find", async (req: Request, res: Response) => {
 });
 
 app.get("/api/findall", async (req: Request, res: Response) => {
-	console.log("hello");
-
 	let users = await User.findAll();
+
+	users.forEach((user: User) => {
+		console.log(user.getAge());
+	});
 
 	res.json({ users: users });
 });
 
+app.get("/api/dump", async (req: Request, res: Response) => {
+	// should download the databse.sqlite file
+});
+
+app.get("/api/restore", async (req: Request, res: Response) => {
+	// should upload the databse.sqlite file
+});
+
+
+let DNS = "https://condomini.onrender.com";
+
+async function selfPing() {
+
+	while (true) {
+		await fetch(DNS);
+		await new Promise(resolve => setTimeout(resolve, 600000));
+	}
+}
+
+
 sequelize.sync().then(async () => {
 	console.log("[sequelize]: Database synced");
+	selfPing();
 	app.listen(port, () => {
 		console.log(`[express]: Server is running at http://localhost:${port}`);
 	});
 });
+
+
